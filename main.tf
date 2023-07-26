@@ -16,7 +16,7 @@ resource "aws_instance" "public_webserver" {
 
 
 # Private EC2 Instance
-resource "aws_instance" "webserver" {
+resource "aws_instance" "private_webserver" {
   ami                         = var.ami
   instance_type               = var.instance_type
   iam_instance_profile        = var.iam_instance_profile
@@ -77,6 +77,10 @@ resource "aws_security_group" "ssh-access" {
     to_port     = 0
     protocol    = -1
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "VPC Security Group"
   }
 }
 
