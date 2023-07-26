@@ -1,60 +1,11 @@
 
-# Public EC2 Instance ( Bastion Host )
-resource "aws_instance" "public_webserver" {
-  ami                  = var.ami
-  instance_type        = var.instance_type
-  iam_instance_profile = var.iam_instance_profile
-  key_name             = var.key_name
-  subnet_id            = aws_subnet.public_subnet_a.id
-
-  vpc_security_group_ids = [aws_security_group.ssh-access.id]
-
-  tags = {
-    Name = "Public EC2 Instance"
-  }
-}
-
-
-# Private EC2 Instance
-resource "aws_instance" "private_webserver" {
-  ami                         = var.ami
-  instance_type               = var.instance_type
-  iam_instance_profile        = var.iam_instance_profile
-  key_name                    = var.key_name
-  subnet_id                   = aws_subnet.private_subnet_a.id
-  user_data_replace_on_change = true
-  user_data                   = <<EOF
-    #!/bin/bash -xe
-    if [ -f "/etc/yum.conf" ]; then
-        sudo sed -i "s/^timeout=.*/timeout=180/" /etc/yum.conf
-    fi
-    echo "#!/bin/bash
-    uptime && yum -y update" > /home/ec2-user/yum_update.sh
-    sudo chmod +x /home/ec2-user/yum_update.sh
-    sudo sh /home/ec2-user/yum_update.sh > /home/ec2-user/yum_output.txt
-    echo "#!/bin/bash
-    echo \"0 * * * 1-5 /home/ec2-user/yum_update.sh\" | crontab" > /home/ec2-user/crontab_entry.sh
-    sudo chmod +x /home/ec2-user/crontab_entry.sh
-    sudo sh /home/ec2-user/crontab_entry.sh
-    crontab -l > /home/ec2-user/list_crons.txt
-    EOF
-
-  vpc_security_group_ids = [aws_security_group.ssh-access.id]
-
-  tags = {
-    Name = "Example EC2 Instance"
-  }
-  depends_on = [aws_security_group.ssh-access]
-}
-
-
 # VPC
-resource "aws_vpc" "vpc_a" {
+resource "aws_vpc" "main" {
   cidr_block       = "10.0.0.0/16"
   instance_tenancy = "default"
 
   tags = {
-    Name = "VPC A"
+    Name = "main"
   }
 }
 
@@ -63,7 +14,7 @@ resource "aws_vpc" "vpc_a" {
 resource "aws_security_group" "ssh-access" {
   name        = "ssh-access-vpc"
   description = "Allow SSH on VPC A"
-  vpc_id      = aws_vpc.vpc_a.id
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 22
@@ -85,159 +36,117 @@ resource "aws_security_group" "ssh-access" {
 }
 
 
-## ------------  Public  ------------ ##
-
 # 2 Public Subnets
-resource "aws_subnet" "public_subnet_a" {
-  vpc_id                  = aws_vpc.vpc_a.id
-  cidr_block              = "10.0.0.0/24"
-  availability_zone       = var.az["1a"]
+resource "aws_subnet" "public" {
+  count = 2
+
+  vpc_id     = aws_vpc.main.id
+  cidr_block = local.public_cidr[count.index]
+  #availability_zone       = var.az["1a"]
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Subnet A"
+    Name = "public${count.index}"
   }
 }
 
-resource "aws_subnet" "public_subnet_b" {
-  vpc_id                  = aws_vpc.vpc_a.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = var.az["1b"]
-  map_public_ip_on_launch = true
+
+# 2 Private Subnets
+resource "aws_subnet" "private" {
+  count = 2
+
+  vpc_id     = aws_vpc.main.id
+  cidr_block = local.private_cidr[count.index]
+  #availability_zone = var.az["1c"]
 
   tags = {
-    Name = "Subnet B"
+    Name = "private${count.index}"
   }
 }
 
 
 # Internet Gateway
-resource "aws_internet_gateway" "vpc_igw" {
-  vpc_id = aws_vpc.vpc_a.id
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "VPC - IGW"
-  }
-}
-
-
-# Public Routing Table & 2 Routing Table Assocations
-resource "aws_route_table" "public_route" {
-  vpc_id = aws_vpc.vpc_a.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.vpc_igw.id
-  }
-
-  tags = {
-    Name = "Public RT"
-  }
-}
-
-resource "aws_route_table_association" "public_rta_a" {
-  subnet_id      = aws_subnet.public_subnet_a.id
-  route_table_id = aws_route_table.public_route.id
-}
-
-resource "aws_route_table_association" "public_rta_b" {
-  subnet_id      = aws_subnet.public_subnet_b.id
-  route_table_id = aws_route_table.public_route.id
-}
-
-
-## ------------  Private  ------------ ##
-
-# 2 Private Subnets
-resource "aws_subnet" "private_subnet_a" {
-  vpc_id            = aws_vpc.vpc_a.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = var.az["1c"]
-
-  tags = {
-    Name = "Private Subnet A"
-  }
-}
-
-resource "aws_subnet" "private_subnet_b" {
-  vpc_id            = aws_vpc.vpc_a.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = var.az["1d"]
-
-  tags = {
-    Name = "Private Subnet B"
-  }
-}
-
-
-# 2 NAT Gateways
-resource "aws_nat_gateway" "ngw_a" {
-  allocation_id = aws_eip.nat_eip_a.id
-  subnet_id     = aws_subnet.public_subnet_a.id
-
-  tags = {
-    Name = "NAT Gateway A"
-  }
-}
-
-resource "aws_nat_gateway" "ngw_b" {
-  allocation_id = aws_eip.nat_eip_b.id
-  subnet_id     = aws_subnet.public_subnet_b.id
-
-  tags = {
-    Name = "NAT Gateway B"
+    Name = "main"
   }
 }
 
 
 # 2 EIPs
-resource "aws_eip" "nat_eip_a" {
+resource "aws_eip" "nat" {
+  count = 2
+
   domain = "vpc"
 
-  depends_on = [aws_internet_gateway.vpc_igw]
+  tags = {
+    Name = "nat${count.index}"
+  }
+
+  depends_on = [aws_internet_gateway.main]
 }
 
-resource "aws_eip" "nat_eip_b" {
-  domain = "vpc"
 
-  depends_on = [aws_internet_gateway.vpc_igw]
+# 2 NAT Gateways
+resource "aws_nat_gateway" "main" {
+  count = 2
+
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+
+  tags = {
+    Name = "main${count.index}"
+  }
 }
 
 
-
-# 2 Private Routing Tables & 2 Routing Table Associations
-resource "aws_route_table" "private_route_a" {
-  vpc_id = aws_vpc.vpc_a.id
+# Public Routing Table
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.ngw_a.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
   }
 
   tags = {
-    Name = "Private RT A"
+    Name = "public"
   }
 }
 
-resource "aws_route_table" "private_route_b" {
-  vpc_id = aws_vpc.vpc_a.id
+
+# 2 Private Routing Tables
+resource "aws_route_table" "private" {
+  count = 2
+
+  vpc_id = aws_vpc.main.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.ngw_b.id
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
   }
 
   tags = {
-    Name = "Private RT B"
+    Name = "private${count.index}"
   }
 }
 
-resource "aws_route_table_association" "private_rta_a" {
-  subnet_id      = aws_subnet.private_subnet_a.id
-  route_table_id = aws_route_table.private_route_a.id
+
+# 2 Public Routing Associations
+resource "aws_route_table_association" "public" {
+  count = 2
+
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "private_rta_b" {
-  subnet_id      = aws_subnet.private_subnet_b.id
-  route_table_id = aws_route_table.private_route_b.id
+
+# 2 Private Routing Associations
+resource "aws_route_table_association" "private" {
+  count = 2
+
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
 }
