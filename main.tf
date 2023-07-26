@@ -39,7 +39,7 @@ resource "aws_instance" "webserver" {
     crontab -l > /home/ec2-user/list_crons.txt
     EOF
 
-  vpc_security_group_ids = [ aws_security_group.ssh-access.id ]
+  vpc_security_group_ids = [aws_security_group.ssh-access.id]
 
   tags = {
     Name = "Example EC2 Instance"
@@ -61,18 +61,18 @@ resource "aws_vpc" "vpc_a" {
 
 # VPC Security Group 
 resource "aws_security_group" "ssh-access" {
-  name = "ssh-access-vpc"
+  name        = "ssh-access-vpc"
   description = "Allow SSH on VPC A"
-  vpc_id = aws_vpc.vpc_a.id
+  vpc_id      = aws_vpc.vpc_a.id
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-    egress {
+  egress {
     from_port   = 0
     to_port     = 0
     protocol    = -1
