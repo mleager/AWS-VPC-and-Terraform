@@ -1,7 +1,24 @@
 
+# Data ( AMI )
+data "aws_ami" "amazonlinux" {
+  most_recent = true
+
+  filter {
+    name = "name"
+    values = [ "amzn2-ami-kernel-*" ]
+  }
+
+  filter {
+    name = "virtualization-type"
+    values = [ "hvm" ]
+  }
+
+  owners = [ "amazon" ] # "137112412989"
+}
+
 # EC2 Instance
 resource "aws_instance" "public_webserver" {
-  ami                         = var.ami
+  ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
   associate_public_ip_address = true
   iam_instance_profile        = var.iam_instance_profile
@@ -43,7 +60,7 @@ resource "aws_security_group" "public" {
 
 # Private EC2 Instance
 resource "aws_instance" "private_webserver" {
-  ami                         = var.ami
+  ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
   iam_instance_profile        = var.iam_instance_profile
   key_name                    = var.key_name
