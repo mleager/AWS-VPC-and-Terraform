@@ -19,6 +19,16 @@ variable "key_name" {
   default = "tf-example"
 }
 
+variable "public_availability_zones" {
+  type    = list(string)
+  default = ["us-east-1a", "us-east-1b"]
+}
+
+variable "private_availability_zones" {
+  type    = list(string)
+  default = ["us-east-1c", "us-east-1d"]
+}
+
 variable "az" {
   type = map(string)
   default = {
