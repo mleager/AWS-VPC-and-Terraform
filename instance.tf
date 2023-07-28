@@ -14,7 +14,6 @@ data "aws_ami" "amazonlinux" {
   owners = [ "amazon" ] # "137112412989"
 }
 
-
 resource "aws_instance" "public_webserver" {
   ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
@@ -31,7 +30,6 @@ resource "aws_instance" "public_webserver" {
     Name = "${var.env_code}-public"
   }
 }
-
 
 resource "aws_security_group" "public" {
   name        = "${var.env_code}-public"
@@ -51,7 +49,7 @@ resource "aws_security_group" "public" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["76.153.164.196/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -66,7 +64,6 @@ resource "aws_security_group" "public" {
   }
 }
 
-
 resource "aws_instance" "private_webserver" {
   ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
@@ -80,7 +77,6 @@ resource "aws_instance" "private_webserver" {
     Name = "${var.env_code}-private"
   }
 }
-
 
 resource "aws_security_group" "private" {
   name        = "${var.env_code}-private"
