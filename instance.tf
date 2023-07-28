@@ -1,5 +1,5 @@
 
-# Data ( AMI )
+
 data "aws_ami" "amazonlinux" {
   most_recent = true
 
@@ -16,7 +16,7 @@ data "aws_ami" "amazonlinux" {
   owners = [ "amazon" ] # "137112412989"
 }
 
-# EC2 Instance
+
 resource "aws_instance" "public_webserver" {
   ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
@@ -32,7 +32,7 @@ resource "aws_instance" "public_webserver" {
   }
 }
 
-# Public Security Group
+
 resource "aws_security_group" "public" {
   name        = "${var.env_code}-public"
   description = "Allow SSH Access"
@@ -58,7 +58,7 @@ resource "aws_security_group" "public" {
   }
 }
 
-# Private EC2 Instance
+
 resource "aws_instance" "private_webserver" {
   ami                         = data.aws_ami.amazonlinux.id
   instance_type               = var.instance_type
@@ -73,7 +73,7 @@ resource "aws_instance" "private_webserver" {
   }
 }
 
-# Private Security Group
+
 resource "aws_security_group" "private" {
   name        = "${var.env_code}-private"
   description = "Allow VPC Traffic"

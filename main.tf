@@ -1,5 +1,4 @@
 
-# VPC
 resource "aws_vpc" "main" {
   cidr_block       = var.vpc_cidr
   instance_tenancy = "default"
@@ -10,7 +9,6 @@ resource "aws_vpc" "main" {
 }
 
 
-# 2 Public Subnets
 resource "aws_subnet" "public" {
   count = length(var.public_cidr)
 
@@ -27,7 +25,6 @@ resource "aws_subnet" "public" {
 }
 
 
-# 2 Private Subnets
 resource "aws_subnet" "private" {
   count = length(var.private_cidr)
 
@@ -42,7 +39,6 @@ resource "aws_subnet" "private" {
 }
 
 
-# Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -52,7 +48,6 @@ resource "aws_internet_gateway" "main" {
 }
 
 
-# 2 EIPs
 resource "aws_eip" "nat" {
   count = length(var.public_cidr)
 
@@ -66,7 +61,6 @@ resource "aws_eip" "nat" {
 }
 
 
-# 2 NAT Gateways
 resource "aws_nat_gateway" "main" {
   count = length(var.public_cidr)
 
@@ -79,7 +73,6 @@ resource "aws_nat_gateway" "main" {
 }
 
 
-# Public Routing Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -94,7 +87,6 @@ resource "aws_route_table" "public" {
 }
 
 
-# 2 Private Routing Tables
 resource "aws_route_table" "private" {
   count = length(var.private_cidr)
 
@@ -111,7 +103,6 @@ resource "aws_route_table" "private" {
 }
 
 
-# 2 Public Routing Associations
 resource "aws_route_table_association" "public" {
   count = length(var.public_cidr)
 
@@ -120,7 +111,6 @@ resource "aws_route_table_association" "public" {
 }
 
 
-# 2 Private Routing Associations
 resource "aws_route_table_association" "private" {
   count = length(var.private_cidr)
 
