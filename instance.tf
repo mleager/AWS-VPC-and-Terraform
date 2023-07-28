@@ -1,5 +1,3 @@
-
-
 data "aws_ami" "amazonlinux" {
   most_recent = true
 
@@ -25,6 +23,8 @@ resource "aws_instance" "public_webserver" {
   key_name                    = var.key_name
   subnet_id                   = aws_subnet.public[0].id
 
+  user_data = file("user_data.sh")
+
   vpc_security_group_ids = [aws_security_group.public.id]
 
   tags = {
@@ -42,6 +42,14 @@ resource "aws_security_group" "public" {
     description = "SSH from public"
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["76.153.164.196/32"]
+  }
+
+  ingress {
+    description = "Allow HTTP Traffic"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["76.153.164.196/32"]
   }
