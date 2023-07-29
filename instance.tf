@@ -2,16 +2,16 @@ data "aws_ami" "amazonlinux" {
   most_recent = true
 
   filter {
-    name = "name"
-    values = [ "amzn2-ami-kernel-*" ]
+    name   = "name"
+    values = ["amzn2-ami-kernel-*"]
   }
 
   filter {
-    name = "virtualization-type"
-    values = [ "hvm" ]
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 
-  owners = [ "amazon" ] # "137112412989"
+  owners = ["amazon"] # "137112412989"
 }
 
 resource "aws_instance" "public_webserver" {
@@ -65,11 +65,11 @@ resource "aws_security_group" "public" {
 }
 
 resource "aws_instance" "private_webserver" {
-  ami                         = data.aws_ami.amazonlinux.id
-  instance_type               = var.instance_type
-  iam_instance_profile        = var.iam_instance_profile
-  key_name                    = var.key_name
-  subnet_id                   = aws_subnet.private[0].id
+  ami                  = data.aws_ami.amazonlinux.id
+  instance_type        = var.instance_type
+  iam_instance_profile = var.iam_instance_profile
+  key_name             = var.key_name
+  subnet_id            = aws_subnet.private[0].id
 
   vpc_security_group_ids = [aws_security_group.private.id]
 
