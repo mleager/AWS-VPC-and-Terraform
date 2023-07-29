@@ -2,8 +2,6 @@ variable "env_code" {
   type = string
 }
 
-variable "vpc_cidr" {}
-
 variable "ami" {
   type    = string
   default = "ami-04823729c75214919"
