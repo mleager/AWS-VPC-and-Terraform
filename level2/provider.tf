@@ -9,7 +9,7 @@ terraform {
 
   backend "s3" {
     bucket         = "tf-state-mentorship"
-    key            = "terraform.tfstate"
+    key            = "level2.tfstate"
     region         = "us-east-1"
     dynamodb_table = "tf-remote-state-locking"
   }
