@@ -28,7 +28,8 @@ resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   cidr_block = var.private_cidr[count.index]
 
-  availability_zone = element(var.private_availability_zones, count.index)
+  #availability_zone = element(var.private_availability_zones, count.index)
+  availability_zone = element(var.public_availability_zones, count.index)
 
   tags = {
     Name = "${var.env_code}-private${count.index}"
