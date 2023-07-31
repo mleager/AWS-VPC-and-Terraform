@@ -23,7 +23,7 @@ resource "aws_instance" "webserver" {
   user_data            = file("user_data.sh")
 
   associate_public_ip_address = true
-  vpc_security_group_ids = [aws_security_group.public.id]
+  vpc_security_group_ids      = [aws_security_group.public.id]
 
   tags = {
     Name = "${var.env_code}-public"
