@@ -21,6 +21,15 @@ resource "aws_lb_target_group" "alb_tg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.terraform_remote_state.level1.outputs.vpc_id
+  
+  health_check {
+    healthy_threshold = 1
+    interval = 3
+    path = "/"
+    port = "80"
+    protocol = "HTTP"
+    timeout = 30
+  }
 }
 
 resource "aws_lb_target_group_attachment" "alb_attach" {
