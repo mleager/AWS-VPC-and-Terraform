@@ -62,7 +62,7 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = aws_subnet.public[count.index].id
 
   tags = {
-    Name = "${var.env_code}-${count.index}"
+    Name = "nat-${count.index}"
   }
 }
 
