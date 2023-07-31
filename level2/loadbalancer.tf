@@ -23,21 +23,13 @@ resource "aws_lb_target_group" "alb_tg" {
   vpc_id   = data.terraform_remote_state.level1.outputs.vpc_id
 
   health_check {
-    healthy_threshold = 1
-    interval          = 3
+    healthy_threshold = 2
+    interval          = 30
     path              = "/"
     port              = "80"
     protocol          = "HTTP"
-    timeout           = 30
+    timeout           = 25
   }
-}
-
-resource "aws_lb_target_group_attachment" "alb_attach" {
-  count = 2
-
-  target_group_arn = aws_lb_target_group.alb_tg.arn
-  target_id        = aws_instance.webserver[count.index].id
-  port             = 80
 }
 
 resource "aws_lb_listener" "front_end" {
