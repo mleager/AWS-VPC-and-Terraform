@@ -6,7 +6,7 @@ resource "aws_lb" "alb" {
   subnets            = [for subnet in data.terraform_remote_state.level1.outputs.public_subnet_id : subnet]
 
   access_logs {
-    bucket  = "tf-state-mentorship" # make an output on level0?
+    bucket  = "tf-state-mentorship"
     prefix  = "test-lb"
     enabled = false
   }
@@ -23,15 +23,11 @@ resource "aws_lb_target_group" "alb_tg" {
   vpc_id   = data.terraform_remote_state.level1.outputs.vpc_id
 }
 
-resource "aws_lb_target_group_attachment" "alb_attach_1" {
-  target_group_arn = aws_lb_target_group.alb_tg.arn
-  target_id        = aws_instance.webserver_1.id
-  port             = 80
-}
+resource "aws_lb_target_group_attachment" "alb_attach" {
+  count = 2
 
-resource "aws_lb_target_group_attachment" "alb_attach_2" {
   target_group_arn = aws_lb_target_group.alb_tg.arn
-  target_id        = aws_instance.webserver_2.id
+  target_id        = aws_instance.webserver[count.index].id
   port             = 80
 }
 

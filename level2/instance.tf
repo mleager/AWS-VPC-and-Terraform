@@ -14,19 +14,20 @@ data "aws_ami" "amazonlinux2" {
   owners = ["amazon"] # "137112412989"
 }
 
-resource "aws_instance" "webserver_1" {
-  ami           = data.aws_ami.amazonlinux2.id
-  instance_type = var.instance_type
-  #associate_public_ip_address = true
+resource "aws_instance" "webserver" {
+  count = 2
+
+  ami                  = data.aws_ami.amazonlinux2.id
+  instance_type        = var.instance_type
   iam_instance_profile = var.iam_instance_profile
   key_name             = var.key_name
-  subnet_id            = data.terraform_remote_state.level1.outputs.private_subnet_id[0]
+  subnet_id            = data.terraform_remote_state.level1.outputs.private_subnet_id[count.index]
   user_data            = file("user_data.sh")
 
   vpc_security_group_ids = [aws_security_group.public.id]
 
   tags = {
-    Name = "${var.env_code}-public"
+    Name = "${var.env_code}-private${count.index}"
   }
 }
 
@@ -61,20 +62,6 @@ resource "aws_security_group" "public" {
 
   tags = {
     Name = "${var.env_code}-public"
-  }
-}
-
-resource "aws_instance" "webserver_2" {
-  ami                  = data.aws_ami.amazonlinux2.id
-  instance_type        = var.instance_type
-  iam_instance_profile = var.iam_instance_profile
-  key_name             = var.key_name
-  subnet_id            = data.terraform_remote_state.level1.outputs.private_subnet_id[1]
-
-  vpc_security_group_ids = [aws_security_group.public.id]
-
-  tags = {
-    Name = "${var.env_code}-private"
   }
 }
 
