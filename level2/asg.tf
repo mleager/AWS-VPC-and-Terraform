@@ -2,8 +2,7 @@ resource "aws_launch_configuration" "launch_config" {
   name_prefix          = "${var.env_code}-"
   image_id             = data.aws_ami.amazonlinux2.id
   instance_type        = var.instance_type
-  iam_instance_profile = aws_iam_instance_profile.s3_profile.name
-  key_name             = var.key_name
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
   user_data            = file("user_data.sh")
 
   security_groups = [aws_security_group.private.id]
