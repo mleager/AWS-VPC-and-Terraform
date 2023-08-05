@@ -16,6 +16,7 @@ resource "aws_db_instance" "mysql" {
   db_name                 = "mydb"
   engine                  = "mysql"
   engine_version          = "8.0.33"
+  identifier              = "tf-mysql-db"
   instance_class          = "db.t3.micro"
   username                = "mark"
   password                = local.pass
