@@ -11,6 +11,14 @@ resource "aws_security_group" "private" {
     security_groups = [var.load_balancer_sg]
   }
 
+  ingress {
+    description     = "Allow Traffic from DB"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [var.load_balancer_sg]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
