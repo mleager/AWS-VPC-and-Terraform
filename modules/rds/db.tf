@@ -1,3 +1,7 @@
+locals {
+  pass = jsondecode(data.aws_secretsmanager_secret_version.version.secret_string)["password"]
+}
+
 data "aws_secretsmanager_secret" "secret" {
   arn = "arn:aws:secretsmanager:us-east-1:600005164000:secret:tf_secret-otPZg4"
 }
@@ -15,11 +19,21 @@ resource "aws_db_instance" "mysql" {
   engine_version          = "8.0.33"
   instance_class          = "db.t3.micro"
   username                = "mark"
-  password                = var.password
-  parameter_group_name    = "default.mysql5.7"
+  password                = local.pass
+  parameter_group_name    = "default.mysql8.0"
   multi_az                = false
   skip_final_snapshot     = true
-  vpc_security_group_ids  = [aws_security_group.private.id]
+  db_subnet_group_name    = aws_db_subnet_group.db_group.name
+  vpc_security_group_ids  = [aws_security_group.db_sg.id]
+}
+
+resource "aws_db_subnet_group" "db_group" {
+  name       = "db_group"
+  subnet_ids = var.private_subnet_id
+
+  tags = {
+    Name = "${var.env_code}-subnet-group"
+  }
 }
 
 resource "aws_security_group" "db_sg" {
@@ -28,19 +42,19 @@ resource "aws_security_group" "db_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Allow HTTP Traffic to MySQL"
+    description     = "Allow Incoming Traffic to MySQL"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = ["0.0.0.0/0"]
+    security_groups = [var.asg_sg]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = -1
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
   tags = {
     Name = "${var.env_code}-db-sg"
