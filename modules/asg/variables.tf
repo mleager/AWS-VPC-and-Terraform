@@ -17,5 +17,3 @@ variable "private_subnet_id" {}
 variable "load_balancer_sg" {}
 
 variable "target_group_arn" {}
-
-#variable "db_sg" {}
