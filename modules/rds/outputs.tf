@@ -9,7 +9,3 @@ output "rds_hostname" {
 output "rds_username" {
   value = aws_db_instance.mysql.username
 }
-
-# output "secret" {
-#   value = var.secret_value
-# }

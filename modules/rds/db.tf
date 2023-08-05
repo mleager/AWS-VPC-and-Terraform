@@ -11,7 +11,6 @@ data "aws_secretsmanager_secret_version" "version" {
 }
 
 resource "aws_db_instance" "mysql" {
-  #availability_zone       =
   allocated_storage       = 10
   backup_retention_period = 7
   db_name                 = "mydb"
@@ -48,13 +47,6 @@ resource "aws_security_group" "db_sg" {
     protocol        = "tcp"
     security_groups = [var.asg_sg]
   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = -1
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
 
   tags = {
     Name = "${var.env_code}-db-sg"
