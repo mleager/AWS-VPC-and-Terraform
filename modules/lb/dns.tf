@@ -7,5 +7,5 @@ resource "aws_route53_record" "www" {
   name    = "www.${data.aws_route53_zone.main.name}"
   type    = "CNAME"
   ttl     = 300
-  records = [aws_lb.alb.dns_name]
+  records = [module.alb.lb_dns_name]
 }

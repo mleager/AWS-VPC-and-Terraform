@@ -1,7 +1,7 @@
-output "load_balancer_sg" {
-  value = aws_security_group.alb_sg.id
+output "security_group_id" {
+  value = module.alb.security_group_id
 }
 
-output "target_group_arn" {
-  value = aws_lb_target_group.alb_tg.arn
+output "target_group_arns" {
+  value = module.alb.target_group_arns
 }
