@@ -10,46 +10,35 @@ data "aws_secretsmanager_secret_version" "version" {
   secret_id = data.aws_secretsmanager_secret.secret.id
 }
 
-resource "aws_db_instance" "mysql" {
-  allocated_storage       = 10
-  backup_retention_period = 7
-  db_name                 = "mydb"
-  engine                  = "mysql"
-  engine_version          = "8.0.33"
-  identifier              = "tf-mysql-db"
-  instance_class          = "db.t3.micro"
-  username                = "mark"
-  password                = local.pass
-  parameter_group_name    = "default.mysql8.0"
-  multi_az                = false
-  skip_final_snapshot     = true
-  db_subnet_group_name    = aws_db_subnet_group.db_group.name
-  vpc_security_group_ids  = [aws_security_group.db_sg.id]
-}
+module "db" {
+  source = "terraform-aws-modules/rds/aws"
 
-resource "aws_db_subnet_group" "db_group" {
-  name       = "db_group"
-  subnet_ids = var.private_subnet_id
+  identifier = "tf-mysql-db"
 
-  tags = {
-    Name = "${var.env_code}-subnet-group"
-  }
-}
+  create_db_subnet_group    = true
+  create_db_option_group    = false
+  create_db_parameter_group = false
 
-resource "aws_security_group" "db_sg" {
-  name        = "${var.env_code}-db-sg"
-  description = "Allow Incoming Traffic"
-  vpc_id      = var.vpc_id
+  engine            = "mysql"
+  engine_version    = "8.0.33"
+  instance_class    = "db.t3.micro"
+  allocated_storage = 5
 
-  ingress {
-    description     = "Allow Incoming Traffic to MySQL"
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [var.asg_sg]
-  }
+  db_name  = "tfdb"
+  username = "mark"
+  password = local.pass
+  port     = "3306"
+
+  multi_az               = false
+  db_subnet_group_name   = "db-group"
+  subnet_ids             = var.private_subnet_id
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+
+  skip_final_snapshot = true
+  deletion_protection = false
 
   tags = {
-    Name = "${var.env_code}-db-sg"
+    Owner       = "user"
+    Environment = "dev"
   }
 }
