@@ -1,7 +1,13 @@
-output "rds_hostname" {
-  value = module.rds.rds_hostname
+output "db_address" {
+  value = module.db.db_instance_address
 }
 
-output "rds_username" {
-  value = module.rds.rds_username
+output "db_username" {
+  value     = module.db.db_instance_username
+  sensitive = true
+}
+
+output "pass" {
+  value     = local.pass
+  sensitive = true
 }

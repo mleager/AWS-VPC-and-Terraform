@@ -1,7 +1,101 @@
-module "lb" {
-  source = "../modules/lb"
+data "aws_route53_zone" "main" {
+  name = "mark-dns.de"
+}
 
-  env_code         = var.env_code
-  vpc_id           = data.terraform_remote_state.level1.outputs.vpc_id
-  public_subnet_id = data.terraform_remote_state.level1.outputs.public_subnet_id
+module "acm" {
+  source = "terraform-aws-modules/acm/aws"
+
+  domain_name         = "www.mark-dns.de"
+  zone_id             = data.aws_route53_zone.main.id
+  wait_for_validation = true
+}
+
+module "dns" {
+  source = "terraform-aws-modules/route53/aws//modules/records"
+
+  zone_id = data.aws_route53_zone.main.zone_id
+
+  records = [
+    {
+      name    = "www"
+      type    = "CNAME"
+      records = [module.alb.lb_dns_name]
+      ttl     = 3600
+    }
+  ]
+}
+
+module "alb_sg" {
+  source = "terraform-aws-modules/security-group/aws"
+
+  name   = "${var.env_code}-alb-sg"
+  vpc_id = data.terraform_remote_state.level1.outputs.vpc_id
+
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      description = "Allow HTTPS to ALB"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
+  egress_with_cidr_blocks = [
+    {
+      from_port   = 0
+      to_port     = 0
+      protocol    = -1
+      description = "Allow All Egress Traffic"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+}
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 8.0"
+
+  name = "${var.env_code}-alb"
+
+  load_balancer_type = "application"
+
+  vpc_id          = data.terraform_remote_state.level1.outputs.vpc_id
+  subnets         = data.terraform_remote_state.level1.outputs.public_subnet_id
+  security_groups = [module.alb_sg.security_group_id]
+
+  target_groups = [
+    {
+      name_prefix          = "${var.env_code}-"
+      backend_protocol     = "HTTP"
+      backend_port         = 80
+      target_type          = "instance"
+      deregistration_delay = 10
+
+      health_check = {
+        enabled             = true
+        interval            = 30
+        path                = "/"
+        port                = "traffic-port"
+        healthy_threshold   = 2
+        unhealthy_threshold = 3
+        timeout             = 6
+        protocol            = "HTTP"
+        matcher             = "200"
+      }
+    }
+  ]
+
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = module.acm.acm_certificate_arn
+      target_group_index = 0
+    }
+  ]
+
+  tags = {
+    Name = "${var.env_code}"
+  }
 }
