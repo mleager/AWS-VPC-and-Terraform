@@ -61,31 +61,6 @@ module "asg" {
   }
 }
 
-# resource "aws_security_group" "private" {
-#   name        = "${var.env_code}-private"
-#   description = "Allow VPC Traffic"
-#   vpc_id      = data.terraform_remote_state.level1.outputs.vpc_id
-
-#   ingress {
-#     description     = "Allow HTTP Traffic from Load Balancer"
-#     from_port       = 80
-#     to_port         = 80
-#     protocol        = "tcp"
-#     security_groups = [module.alb.security_group_id]
-#   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = -1
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   tags = {
-#     Name = "${var.env_code}-private"
-#   }
-# }
-
 module "private_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -96,7 +71,7 @@ module "private_sg" {
   computed_ingress_with_source_security_group_id = [
     {
       rule                     = "http-80-tcp"
-      source_security_group_id = module.alb.security_group_id
+      source_security_group_id = module.alb_sg.security_group_id
     }
   ]
   number_of_computed_ingress_with_source_security_group_id = 1
@@ -105,7 +80,7 @@ module "private_sg" {
     {
       from_port   = 0
       to_port     = 0
-      protocol    = "tcp"
+      protocol    = -1
       description = "Allow HTTPS to ALB"
       cidr_blocks = "0.0.0.0/0"
     }

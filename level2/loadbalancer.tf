@@ -25,6 +25,33 @@ module "dns" {
   ]
 }
 
+module "alb_sg" {
+  source = "terraform-aws-modules/security-group/aws"
+
+  name   = "${var.env_code}-alb-sg"
+  vpc_id = data.terraform_remote_state.level1.outputs.vpc_id
+
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      description = "Allow HTTPS to ALB"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
+  egress_with_cidr_blocks = [
+    {
+      from_port   = 0
+      to_port     = 0
+      protocol    = -1
+      description = "Allow All Egress Traffic"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+}
+
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 8.0"
@@ -33,28 +60,9 @@ module "alb" {
 
   load_balancer_type = "application"
 
-  vpc_id  = data.terraform_remote_state.level1.outputs.vpc_id
-  subnets = data.terraform_remote_state.level1.outputs.public_subnet_id
-
-  create_security_group = true
-  security_group_name   = "${var.env_code}-alb-sg"
-  security_group_rules = {
-    ingress_all_https = {
-      type        = "ingress"
-      from_port   = 443
-      to_port     = 443
-      protocol    = "tcp"
-      description = "Allow Incoming HTTPS Access for ALB"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
+  vpc_id          = data.terraform_remote_state.level1.outputs.vpc_id
+  subnets         = data.terraform_remote_state.level1.outputs.public_subnet_id
+  security_groups = [module.alb_sg.security_group_id]
 
   target_groups = [
     {
@@ -67,7 +75,7 @@ module "alb" {
       health_check = {
         enabled             = true
         interval            = 30
-        path                = "/healthz"
+        path                = "/"
         port                = "traffic-port"
         healthy_threshold   = 2
         unhealthy_threshold = 3
