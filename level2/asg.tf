@@ -14,6 +14,32 @@ data "aws_ami" "amazonlinux2" {
   owners = ["amazon"] # "137112412989"
 }
 
+module "private_sg" {
+  source = "terraform-aws-modules/security-group/aws"
+
+  name        = "${var.env_code}-private"
+  description = "Allow HTTP Traffic from Load Balancer"
+  vpc_id      = data.terraform_remote_state.level1.outputs.vpc_id
+
+  computed_ingress_with_source_security_group_id = [
+    {
+      rule                     = "http-80-tcp"
+      source_security_group_id = module.alb_sg.security_group_id
+    }
+  ]
+  number_of_computed_ingress_with_source_security_group_id = 1
+
+  egress_with_cidr_blocks = [
+    {
+      from_port   = 0
+      to_port     = 0
+      protocol    = -1
+      description = "Allow HTTPS to ALB"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+}
+
 module "asg" {
   source = "terraform-aws-modules/autoscaling/aws"
 
@@ -59,30 +85,4 @@ module "asg" {
   autoscaling_group_tags = {
     Name = "${var.env_code}-asg"
   }
-}
-
-module "private_sg" {
-  source = "terraform-aws-modules/security-group/aws"
-
-  name        = "${var.env_code}-private"
-  description = "Allow HTTP Traffic from Load Balancer"
-  vpc_id      = data.terraform_remote_state.level1.outputs.vpc_id
-
-  computed_ingress_with_source_security_group_id = [
-    {
-      rule                     = "http-80-tcp"
-      source_security_group_id = module.alb_sg.security_group_id
-    }
-  ]
-  number_of_computed_ingress_with_source_security_group_id = 1
-
-  egress_with_cidr_blocks = [
-    {
-      from_port   = 0
-      to_port     = 0
-      protocol    = -1
-      description = "Allow HTTPS to ALB"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
 }

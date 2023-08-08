@@ -10,6 +10,30 @@ locals {
   pass = jsondecode(data.aws_secretsmanager_secret_version.version.secret_string)["password"]
 }
 
+module "rds_sg" {
+  source = "terraform-aws-modules/security-group/aws"
+
+  name        = "${var.env_code}-rds-sg"
+  description = "Allow Incoming Traffic to DB on Port 3306"
+  vpc_id      = data.terraform_remote_state.level1.outputs.vpc_id
+
+  computed_ingress_with_source_security_group_id = [
+    {
+      rule                     = "mysql-tcp"
+      source_security_group_id = module.private_sg.security_group_id
+    }
+  ]
+  number_of_computed_ingress_with_source_security_group_id = 1
+
+  egress_with_cidr_blocks = [
+    {
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+}
 
 module "db" {
   source = "terraform-aws-modules/rds/aws"
@@ -44,29 +68,4 @@ module "db" {
     Owner       = "user"
     Environment = "dev"
   }
-}
-
-module "rds_sg" {
-  source = "terraform-aws-modules/security-group/aws"
-
-  name        = "${var.env_code}-rds-sg"
-  description = "Allow Incoming Traffic to DB on Port 3306"
-  vpc_id      = data.terraform_remote_state.level1.outputs.vpc_id
-
-  computed_ingress_with_source_security_group_id = [
-    {
-      rule                     = "mysql-tcp"
-      source_security_group_id = module.private_sg.security_group_id
-    }
-  ]
-  number_of_computed_ingress_with_source_security_group_id = 1
-
-  egress_with_cidr_blocks = [
-    {
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
 }
