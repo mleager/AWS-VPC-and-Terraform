@@ -8,6 +8,7 @@ output "db_username" {
 }
 
 output "pass" {
-  value     = local.pass
+  #value     = nonsensitive(sha256(var.password))
+  value     = var.password
   sensitive = true
 }
